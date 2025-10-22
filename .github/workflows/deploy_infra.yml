@@ -1,0 +1,52 @@
+name: 'Deploy InnovateMart Infrastructure'
+
+on:
+  # Triggers the workflow on push events to the main branch
+  push:
+    branches:
+      - main
+  # Triggers the workflow on pull requests targeting the main branch
+  pull_request:
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        # We tell all 'run' steps to execute inside the terraform directory
+        working-directory: ./terraform
+
+    steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v3
+
+    - name: 'Setup Terraform'
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - name: 'Configure AWS Credentials'
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        # This region must match your variables.tf file
+        aws-region: 'eu-west-1' 
+
+    - name: 'Terraform Init'
+      id: init
+      run: terraform init
+
+    - name: 'Terraform Plan'
+      id: plan
+      # Only run 'plan' on Pull Requests
+      if: github.event_name == 'pull_request'
+      run: terraform plan -no-color
+
+    - name: 'Terraform Apply'
+      # Only run 'apply' on a push to the main branch
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve
+
