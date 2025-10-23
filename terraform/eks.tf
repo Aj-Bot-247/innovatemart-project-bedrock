@@ -1,5 +1,16 @@
 # This file provisions the EKS cluster and its associated node group.
 
+# --- Kubernetes Provider Configuration ---
+provider "kubernetes" {
+  host                   = aws_eks_cluster.innovatemart_cluster.endpoint
+  cluster_ca_certificate = base64decode(aws_eks_cluster.innovatemart_cluster.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = aws_eks_cluster.innovatemart_cluster.name
+}
+
 # This gets the certificate thumbprint needed to create the OIDC provider
 data "tls_certificate" "eks_cluster_issuer" {
   url = aws_eks_cluster.innovatemart_cluster.identity[0].oidc[0].issuer
@@ -55,3 +66,63 @@ resource "aws_eks_node_group" "innovatemart_node_group" {
     aws_iam_role_policy_attachment.ec2_container_registry_read_only,
   ]
 }
+
+# --- EKS aws-auth ConfigMap for Developer Access ---
+
+resource "kubernetes_config_map_v1_data" "aws_auth" {
+  provider = kubernetes
+
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  force = true # Allows Terraform to overwrite the ConfigMap
+
+  data = {
+    "mapUsers" = yamlencode(
+      concat(
+        [
+          {
+            userarn  = data.aws_iam_user.developer_user_data.arn
+            username = data.aws_iam_user.developer_user_data.user_name
+            groups   = ["viewers"]
+          }
+        ],
+        yamldecode(
+          try(
+            data.kubernetes_config_map_v1.aws_auth.data["mapUsers"],
+            "[]"
+          )
+        )
+      )
+    )
+    "mapRoles" = yamlencode([
+      {
+        rolearn  = aws_iam_role.eks_node_group_role.arn
+        username = "system:node:{{EC2PrivateDNSName}}"
+        groups = [
+          "system:bootstrappers",
+          "system:nodes"
+        ]
+      }
+    ])
+  }
+
+  depends_on = [
+    aws_eks_cluster.innovatemart_cluster,
+    aws_iam_user.developer_user,
+  ]
+}
+
+data "kubernetes_config_map_v1" "aws_auth" {
+  provider = kubernetes
+
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  depends_on = [aws_eks_cluster.innovatemart_cluster]
+}
+

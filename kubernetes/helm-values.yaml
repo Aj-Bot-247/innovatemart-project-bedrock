@@ -23,7 +23,6 @@ catalog:
     persistentVolume:
       enabled: true
       storageClass: gp3
-
 orders:
   postgresql:
     secret:
@@ -33,9 +32,18 @@ orders:
     persistentVolume:
       enabled: true
       storageClass: gp3
+  # ADD THIS SECTION FOR THE ORDERS APP PROBE
+  readinessProbe:
+    initialDelaySeconds: 45
+
+# ADD THIS ENTIRE NEW SECTION FOR THE CHECKOUT APP PROBE
+checkout:
+  readinessProbe:
+    initialDelaySeconds: 45
 
 ui:
   endpoints:
+
     catalog: "http://retail-store-app-catalog:80"
     carts: "http://retail-store-app-carts:80"
     orders: "http://retail-store-app-orders:80"
