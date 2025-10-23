@@ -24,3 +24,7 @@ output "developer_user_secret_access_key" {
   value       = aws_iam_access_key.developer_user_key.secret
   sensitive   = true
 }
+output "ebs_csi_driver_role_arn" {
+  description = "The ARN of the IAM role for the EBS CSI driver."
+  value       = aws_iam_role.ebs_csi_driver_role.arn
+}

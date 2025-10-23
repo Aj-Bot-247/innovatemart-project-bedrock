@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  # Optional: To set IOPS or Throughput, you can uncomment these lines:
+  # iopsPerGB: "3"
+  # throughput: "125"
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

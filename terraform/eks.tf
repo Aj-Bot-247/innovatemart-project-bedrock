@@ -1,5 +1,17 @@
 # This file provisions the EKS cluster and its associated node group.
 
+# This gets the certificate thumbprint needed to create the OIDC provider
+data "tls_certificate" "eks_cluster_issuer" {
+  url = aws_eks_cluster.innovatemart_cluster.identity[0].oidc[0].issuer
+}
+
+# This creates the OIDC provider in IAM
+resource "aws_iam_openid_connect_provider" "eks_oidc" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks_cluster_issuer.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.innovatemart_cluster.identity[0].oidc[0].issuer
+}
+
 resource "aws_eks_cluster" "innovatemart_cluster" {
   name     = var.cluster_name
   role_arn = aws_iam_role.eks_cluster_role.arn

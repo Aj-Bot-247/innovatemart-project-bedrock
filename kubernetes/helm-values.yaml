@@ -1,0 +1,52 @@
+# kubernetes/helm-values.yaml
+
+# This values.yaml is for the CORE REQUIREMENT.
+# It deploys all dependencies (MySQL, PostgreSQL, Redis, RabbitMQ) 
+# inside the Kubernetes cluster.
+
+global:
+  storageClass: gp3
+
+carts:
+  dynamodb:
+    useDynamoDB: false 
+    persistentVolume:
+      enabled: true
+      storageClass: gp3
+
+catalog:
+  mysql:
+    secret:
+      create: true
+      name: "catalog-db"
+      username: "catalog"
+    persistentVolume:
+      enabled: true
+      storageClass: gp3
+
+orders:
+  postgresql:
+    secret:
+      create: true
+      name: "orders-db"
+      username: "orders"
+    persistentVolume:
+      enabled: true
+      storageClass: gp3
+
+ui:
+  endpoints:
+    catalog: "http://retail-store-app-catalog:80"
+    carts: "http://retail-store-app-carts:80"
+    orders: "http://retail-store-app-orders:80"
+    checkout: "http://retail-store-app-checkout:80"
+
+rabbitmq:
+  persistentVolume:
+    enabled: true
+    storageClass: gp3
+
+redis:
+  persistentVolume:
+    enabled: true
+    storageClass: gp3
