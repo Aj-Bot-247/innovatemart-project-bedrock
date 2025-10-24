@@ -68,7 +68,6 @@ resource "aws_eks_node_group" "innovatemart_node_group" {
 }
 
 # --- EKS aws-auth ConfigMap for Developer Access ---
-
 resource "kubernetes_config_map_v1_data" "aws_auth" {
   provider = kubernetes
 
@@ -80,23 +79,16 @@ resource "kubernetes_config_map_v1_data" "aws_auth" {
   force = true # Allows Terraform to overwrite the ConfigMap
 
   data = {
-    "mapUsers" = yamlencode(
-      concat(
-        [
-          {
-            userarn  = data.aws_iam_user.developer_user_data.arn
-            username = data.aws_iam_user.developer_user_data.user_name
-            groups   = ["viewers"]
-          }
-        ],
-        yamldecode(
-          try(
-            data.kubernetes_config_map_v1.aws_auth.data["mapUsers"],
-            "[]"
-          )
-        )
-      )
-    )
+    # This declarative list is the corrected part.
+    "mapUsers" = yamlencode([
+      {
+        userarn  = data.aws_iam_user.developer_user_data.arn
+        username = data.aws_iam_user.developer_user_data.user_name
+        groups   = ["viewers"]
+      }
+    ])
+    
+    # This mapRoles section is correct and should remain.
     "mapRoles" = yamlencode([
       {
         rolearn  = aws_iam_role.eks_node_group_role.arn
@@ -115,14 +107,5 @@ resource "kubernetes_config_map_v1_data" "aws_auth" {
   ]
 }
 
-data "kubernetes_config_map_v1" "aws_auth" {
-  provider = kubernetes
 
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  depends_on = [aws_eks_cluster.innovatemart_cluster]
-}
 

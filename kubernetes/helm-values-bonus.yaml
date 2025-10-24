@@ -1,0 +1,78 @@
+# helm-values-bonus.yaml - For Bonus Objective 4.1 (Managed Persistence)
+
+global:
+  storageClass: gp3
+
+# --- Carts Service Configuration ---
+carts:
+  dynamodb:
+    # Disable the in-cluster DynamoDB local chart
+    enabled: false
+  # Enable the application's feature flag to use external DynamoDB
+  useDynamoDB: true
+  env:
+    # CORRECTED: The environment variable name must be DYNAMODB_TABLE_NAME
+    - name: DYNAMODB_TABLE_NAME
+      value: "innovatemart-prod-carts"
+
+# --- Catalog Service Configuration ---
+catalog:
+  mysql:
+    # Disable the in-cluster MySQL chart
+    enabled: false
+  # Provide connection details for the external RDS MySQL instance
+  env:
+    - name: SPRING_DATASOURCE_URL
+      # CORRECTED: Added the database name '/catalog' to the end of the URL
+      value: "jdbc:mysql://innovatemart-prod-catalog-db.cxu62ikkiduu.eu-west-1.rds.amazonaws.com:3306/catalog"
+    - name: SPRING_DATASOURCE_USERNAME
+      value: "catalog"
+    # Reference the password from the Kubernetes Secret
+    - name: SPRING_DATASOURCE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: rds-credentials
+          key: password
+
+# --- Orders Service Configuration ---
+orders:
+  postgresql:
+    # Disable the in-cluster PostgreSQL chart
+    enabled: false
+  # Provide connection details for the external RDS PostgreSQL instance
+  env:
+    - name: SPRING_DATASOURCE_URL
+      # CORRECTED: Added the database name '/orders' to the end of the URL
+      value: "jdbc:postgresql://innovatemart-prod-orders-db.cxu62ikkiduu.eu-west-1.rds.amazonaws.com:5432/orders"
+    - name: SPRING_DATASOURCE_USERNAME
+      value: "orders"
+    # Reference the password from the Kubernetes Secret
+    - name: SPRING_DATASOURCE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: rds-credentials
+          key: password
+  # Keep the readiness probe fix
+  readinessProbe:
+    initialDelaySeconds: 45
+
+# --- Checkout Service Configuration ---
+checkout:
+  # Keep the readiness probe fix
+  readinessProbe:
+    initialDelaySeconds: 45
+
+# --- UI Service Configuration (Corrected Service Names) ---
+ui:
+  endpoints:
+    catalog: "http://retail-app-catalog:80"
+    carts: "http://retail-app-carts:80"
+    orders: "http://retail-app-orders:80"
+    checkout: "http://retail-app-checkout:80"
+
+# --- Disable unused in-cluster dependencies ---
+# Note: Keep rabbitmq enabled if the checkout service depends on it.
+# rabbitmq:
+#   enabled: false
+redis:
+  enabled: false

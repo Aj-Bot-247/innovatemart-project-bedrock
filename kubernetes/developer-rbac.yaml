@@ -13,8 +13,8 @@ kind: ClusterRoleBinding
 metadata:
   name: readonly-binding
 subjects:
-- kind: User
-  name: innovatemart-dev-readonly # This name MUST match the username in the aws-auth configmap
+- kind: Group 
+  name: viewers 
   apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole

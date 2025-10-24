@@ -32,11 +32,11 @@ orders:
     persistentVolume:
       enabled: true
       storageClass: gp3
-  # ADD THIS SECTION FOR THE ORDERS APP PROBE
+  
   readinessProbe:
     initialDelaySeconds: 45
 
-# ADD THIS ENTIRE NEW SECTION FOR THE CHECKOUT APP PROBE
+
 checkout:
   readinessProbe:
     initialDelaySeconds: 45
